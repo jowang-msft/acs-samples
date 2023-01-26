@@ -128,7 +128,6 @@
     <Compile Include="Samples\Client.cs" />
     <Compile Include="Samples\Devices.cs" />
     <Compile Include="Samples\JoinCall.cs" />
-    <Compile Include="Samples\PTSN.cs" />
     <Compile Include="Samples\RawMedia.cs" />
     <Compile Include="Samples\Sample.cs" />
   </ItemGroup>

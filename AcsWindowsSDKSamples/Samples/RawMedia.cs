@@ -9,27 +9,28 @@ namespace AcsWindowsSDKSamples.Samples
     {
         private async void RawAsync()
         {
-            // Raw audio
+            // Setup raw audio (incoming/outgoing) streams
             var rawIncomingAudioOptions = new RawIncomingAudioOptions(AudioSampleRate.SampleRate_48000, AudioChannelMode.ChannelMode_Stereo, AudioFormat.Pcm_16_Bit);
             var rawIncomingAudioStream = new RawIncomingAudioStream(rawIncomingAudioOptions);
             rawIncomingAudioStream.OnNewAudioBufferAvailable += RawIncomingAudioStream_OnNewAudioBufferAvailable;
             rawIncomingAudioStream.OnAudioStreamStopped += RawIncomingAudioStream_OnAudioStreamStopped;
 
-            var outgoingAudioOptions = new RawOutgoingAudioOptions(AudioSampleRate.SampleRate_48000, AudioChannelMode.ChannelMode_Stereo, AudioFormat.Pcm_16_Bit, OutgoingAudioMsOfDataPerBlock.Ms_20);
-            var outgoingAudioStream = new RawOutgoingAudioStream(outgoingAudioOptions);
-            outgoingAudioStream.OnAudioStreamReady += OutgoingAudioStream_OnAudioStreamReady;
-            outgoingAudioStream.OnAudioStreamStopped += OutgoingAudioStream_OnAudioStreamStopped;
+            var rawOutgoingAudioOptions = new RawOutgoingAudioOptions(AudioSampleRate.SampleRate_48000, AudioChannelMode.ChannelMode_Stereo, AudioFormat.Pcm_16_Bit, OutgoingAudioMsOfDataPerBlock.Ms_20);
+            var rawOutgoingAudioStream = new RawOutgoingAudioStream(rawOutgoingAudioOptions);
+            rawOutgoingAudioStream.OnAudioStreamReady += OutgoingAudioStream_OnAudioStreamReady;
+            rawOutgoingAudioStream.OnAudioStreamStopped += OutgoingAudioStream_OnAudioStreamStopped;
 
             var audioOptions = new AudioOptions()
             {
                 IncomingAudioStream = rawIncomingAudioStream,
-                OutgoingAudioStream = outgoingAudioStream,
+                OutgoingAudioStream = rawOutgoingAudioStream,
                 Muted = false,
                 SpeakerMuted = false
             };
 
-            // Raw video
-            var videoFormat = new VideoFormat()
+            // Setup raw outgoing video streams
+            var rawVideoOptions = new RawOutgoingVideoStreamOptions();
+            rawVideoOptions.SetVideoFormats(new VideoFormat[] { new VideoFormat()
             {
                 Width = 1280,
                 Height = 720,
@@ -37,42 +38,38 @@ namespace AcsWindowsSDKSamples.Samples
                 VideoFrameKind = VideoFrameKind.VideoSoftware,
                 FramesPerSecond = 30,
                 Stride1 = 1280 * 4,
-            };
-
-            // Virtual outgoing video
-            var rawVideoOptions = new RawOutgoingVideoStreamOptions();
-            rawVideoOptions.SetVideoFormats(new VideoFormat[] { videoFormat }); // Why not through ctor?
+            } });
             rawVideoOptions.OnOutgoingVideoStreamStateChanged += Options_OnOutgoingVideoStreamStateChanged;
             rawVideoOptions.OnVideoFrameSenderChanged += Options_OnVideoFrameSenderChanged;
+            // Setup VirtualRawOutgoingVideoStream
             var virtualRawOutgoingVideoStream = new VirtualRawOutgoingVideoStream(rawVideoOptions);
-            // Share screen outgoing video - high resolution
+            // Setup ScreenShareRawOutgoingVideoStream - high resolution
             var screenShareRawOutgoingVideoStream = new ScreenShareRawOutgoingVideoStream(rawVideoOptions);
 
-            //var rowIncomingVideoStream = new RawIncomingVideoStream(RawIncomingVideoStream);
-            //rowIncomingVideoStream.OnVideoFrameAvailable += RowIncomingVideoStream_OnVideoFrameAvailable;
+            // See RemoteParticipant_OnVideoStreamStateChanged for example of accessing IncomingVideoStream
 
             // Start the call
-            var videoOptions = new VideoOptions(new[] { new OutgoingVideoStream() })
+            var videoOptions = new VideoOptions(new List<OutgoingVideoStream>() { virtualRawOutgoingVideoStream, screenShareRawOutgoingVideoStream }.ToArray())
             {
-                IncomingVideoOptions = new IncomingVideoOptions()
+                IncomingVideoOptions = new IncomingVideoOptions() /// Why can't we setup IncomingVideoStream here like we do with AudioOption?
                 {
                     AllowVideoFrameTextures = true,
                     ReceiveRawIncomingVideoStreams = true,
                 }
             };
 
-            var startCallOptions = new StartCallOptions()
-            {
-                AudioOptions = audioOptions,
-                VideoOptions = videoOptions,
-            };
-
             var callAgent = await GetCallAgentAsync();
+            var call = await callAgent.StartCallAsync(
+                new [] { new CommunicationUserIdentifier("8:acs:xxxxx") },
+                new StartCallOptions()
+                {
+                    AudioOptions = audioOptions,
+                    VideoOptions = videoOptions,
+                });
 
-            var callees = new List<CommunicationIdentifier>() { new CommunicationUserIdentifier("8:acs:xxxxx") };
-            var call = await callAgent.StartCallAsync(callees, startCallOptions);
-
+            // Start VirtualRawOutgoingVideoStream
             await call.StartVideo(virtualRawOutgoingVideoStream);
+            // Start ScreenShareRawOutgoingVideoStream
             await call.StartVideo(screenShareRawOutgoingVideoStream);
 
             call.OnRemoteParticipantsUpdated += Call_OnRemoteParticipantsUpdated;
@@ -102,10 +99,8 @@ namespace AcsWindowsSDKSamples.Samples
                     {
                         switch (incomingVideoStream.IncomingVideoStreamKind)
                         {
-                            case IncomingVideoStreamKind.Remote:
-                                break;
                             case IncomingVideoStreamKind.Raw:
-                                var rawIncomingVideoStream = incomingVideoStream as RawIncomingVideoStream;
+                                var rawIncomingVideoStream = incomingVideoStream as RawIncomingVideoStream; // Is there another way to get RawIncomingVideoStream?
                                 rawIncomingVideoStream.OnVideoFrameAvailable += RawIncomingVideoStream_OnVideoFrameAvailable;
                                 rawIncomingVideoStream.Start();
                                 break;

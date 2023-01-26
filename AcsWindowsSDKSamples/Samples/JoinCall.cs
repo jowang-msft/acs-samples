@@ -1,10 +1,5 @@
 ﻿using Azure.Communication.Calling.WindowsClient;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace AcsWindowsSDKSamples.Samples
 {
@@ -12,6 +7,7 @@ namespace AcsWindowsSDKSamples.Samples
     {
         private async void JoinCallAsync()
         {
+            // Setup audio preference when joining the call
             var audioOptions = new AudioOptions()
             {
                 IncomingAudioStream = await GetIncomingAudioStreamAsync(),
@@ -19,8 +15,8 @@ namespace AcsWindowsSDKSamples.Samples
                 Muted = false,
                 SpeakerMuted = false
             };
-
-            var videoOptions = new VideoOptions(new[] { new OutgoingVideoStream() })
+            // Setup video preference when joining the call
+            var videoOptions = new VideoOptions(new[] { await GetOutgoingVideoStreamAsync() })
             {
                 IncomingVideoOptions = new IncomingVideoOptions()
                 {
@@ -29,27 +25,21 @@ namespace AcsWindowsSDKSamples.Samples
                 }
             };
 
-            var startCallOptions = new StartCallOptions()
+            var locator = await GetJoinMeetingLocatorAsync();
+            var joinCallOptions = new JoinCallOptions()
             {
                 AudioOptions = audioOptions,
-                VideoOptions = videoOptions
+                VideoOptions = videoOptions,
             };
 
             var callAgent = await GetCallAgentAsync();
-            JoinCallOptions joinCallOptions = new JoinCallOptions()
-            {
-                AudioOptions = audioOptions,
-                VideoOptions = videoOptions
-            };
-
-            var locator = await GetJoinMeetingLocatorAsync();
             var call = await callAgent.JoinAsync(locator, joinCallOptions);
 
-            //
-            var groupCallLocator = new GroupCallLocator(Guid.Parse("groupId"));
+            // Join group call using group id (GUID)
+            var groupCallLocator = new GroupCallLocator(Guid.Parse("<groupId>"));
             await callAgent.JoinAsync(groupCallLocator, joinCallOptions);
-
-            var groupChatCallLocator = new GroupChatCallLocator("threadid"); //TFL
+            // Join group chat call using thread id
+            var groupChatCallLocator = new GroupChatCallLocator("<threadid>"); //TFL
             await callAgent.JoinAsync(groupChatCallLocator, joinCallOptions);
         }
     }

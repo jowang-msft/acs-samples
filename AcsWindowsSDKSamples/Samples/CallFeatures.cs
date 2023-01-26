@@ -1,13 +1,7 @@
 ﻿using Azure.Communication.Calling.WindowsClient;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Windows.Media.Protection.PlayReady;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Media;
 
 namespace AcsWindowsSDKSamples.Samples
 {
@@ -17,21 +11,16 @@ namespace AcsWindowsSDKSamples.Samples
 
         async void AddFeatureAsync()
         {
-            var client = await GetCallClientAsync();
-
-            var callAgent = await GetCallAgentAsync();
-
-            var callees = new List<CommunicationIdentifier>() { new CommunicationUserIdentifier("eyxxxxx") };
-
+            // Setup audio preference
             var audioOptions = new AudioOptions()
             {
                 IncomingAudioStream = await GetIncomingAudioStreamAsync(),
                 OutgoingAudioStream = await GetOutgoingAudioStreamAsync(),
                 Muted = false,
-                SpeakerMuted = false
+                SpeakerMuted = false,
             };
-
-            var videoOptions = new VideoOptions(new[] { new OutgoingVideoStream() })
+            // Setup video preference
+            var videoOptions = new VideoOptions(new[] { await GetOutgoingVideoStreamAsync() })
             {
                 IncomingVideoOptions = new IncomingVideoOptions()
                 {
@@ -40,29 +29,27 @@ namespace AcsWindowsSDKSamples.Samples
                 }
             };
 
-            var startCallOptions = new StartCallOptions()
-            {
-                AudioOptions = audioOptions,
-                VideoOptions = videoOptions
-            };
+            // Start the call
+            var callAgent = await GetCallAgentAsync();
+            var call = await callAgent.StartCallAsync(
+                new [] { new CommunicationUserIdentifier("eyxxxxx") },
+                new StartCallOptions()
+                {
+                    AudioOptions = audioOptions,
+                    VideoOptions = videoOptions
+                });
 
-            var call = await callAgent.StartCallAsync(callees, startCallOptions);
-
-            // Turn on caption feature
-            var options = new StartCaptionsOptions()
-            {
-                Language = "en-us"
-            };
-            var captionsFeature = (CaptionsCallFeature)call.GetCallFeatureExtension(HandleType.CaptionsCallFeature);
+            // Enable on caption feature
+            var captionsFeature = (CaptionsCallFeature)call.GetCallFeatureExtension(HandleType.CaptionsCallFeature); // The factory is being reworked
             captionsFeature.OnCaptionsReceived += CaptionsFeature_OnCaptionsReceived;
-            await captionsFeature.StartCaptionsAsync(options);
+            await captionsFeature.StartCaptionsAsync(new StartCaptionsOptions() { Language = "en-us" });
 
-            // Turn on background blur feature
+            // Enable background blur feature
+            var client = await GetCallClientAsync();
             var cameras = (await client.GetDeviceManager()).Cameras;
             var localVideoStream = new LocalVideoStream(cameras.First());
             var videoEffectsLocalVideoStreamFeature = (VideoEffectsLocalVideoStreamFeature)localVideoStream.GetLocalVideoStreamFeatureExtension(HandleType.VideoEffectsLocalVideoStreamFeature);
-
-            var backgroundBlurVideoEffect = new BackgroundBlurEffect(); // How do we event set Name?
+            var backgroundBlurVideoEffect = new BackgroundBlurEffect();
             videoEffectsLocalVideoStreamFeature.OnVideoEffectEnabled += VideoEffectsLocalVideoStreamFeature_OnVideoEffectEnabled;
             videoEffectsLocalVideoStreamFeature.OnVideoEffectDisabled += VideoEffectsLocalVideoStreamFeature_OnVideoEffectDisabled;
             videoEffectsLocalVideoStreamFeature.OnVideoEffectError += VideoEffectsLocalVideoStreamFeature_OnVideoEffectError;
@@ -86,7 +73,6 @@ namespace AcsWindowsSDKSamples.Samples
 
             // TranscriptionCallFeature
             var transcriptionFeature = (TranscriptionCallFeature)call.GetCallFeatureExtension(HandleType.TranscriptionCallFeature);
-
             transcriptionFeature.OnIsTranscriptionActiveChanged += TranscriptionFeature_OnIsTranscriptionActiveChanged;
         }
 

@@ -14,38 +14,25 @@ namespace AcsWindowsSDKSamples.Samples
         {
             var client = await GetCallClientAsync();
 
-            var deviceManager = await client.GetDeviceManager();
+            var deviceManager = await client.GetDeviceManagerAsync();
             // Set up event sinks for device manager
-            deviceManager.OnMicrophonesUpdated += DeviceManager_OnMicrophonesUpdated;
-            deviceManager.OnCamerasUpdated += DeviceManager_OnCamerasUpdated;
-            deviceManager.OnSpeakersUpdated += DeviceManager_OnSpeakersUpdated;
+            deviceManager.MicrophonesUpdated += DeviceManager_OnMicrophonesUpdated;
+            deviceManager.CamerasUpdated += DeviceManager_OnCamerasUpdated;
+            deviceManager.SpeakersUpdated += DeviceManager_OnSpeakersUpdated;
             // We can fetch various media devices and query for their states
             var microphone = deviceManager.Microphone;
             var camera = deviceManager.Cameras[3];
             var speaker = deviceManager.Speakers[2];
 
-            // Setup audio preferences
-            var audioOptions = new AudioOptions()
-            {
-                IncomingAudioStream = await GetIncomingAudioStreamAsync(),
-                OutgoingAudioStream = await GetOutgoingAudioStreamAsync(),
-                Muted = false,
-                SpeakerMuted = false
-            };
-            // Setup video preferences
-            var videoOptions = new VideoOptions(new[] { await GetOutgoingVideoStreamAsync() })
-            {
-                IncomingVideoOptions = new IncomingVideoOptions()
-                {
-                    AllowVideoFrameTextures = true,
-                    ReceiveRawIncomingVideoStreams = true,
-                }
-            };
+            // Configure audio preferences
+            var audioOptions = new AudioOptions() {  IsMuted = false };
+            // Configure video preference
+            var videoOptions = new VideoOptions(new VideoOptions( new[] { await GetOutgoingVideoStreamAsync() }));
 
             // Start the call and get ready to resposne to device callbacks
             var callAgent = await GetCallAgentAsync();
             var call = await callAgent.StartCallAsync(
-                new [] { new CommunicationUserIdentifier("eyxxxxx") },
+                new [] { new UserCallIdentifier("eyxxxxx") },
                 new StartCallOptions()
                 {
                     AudioOptions = audioOptions,

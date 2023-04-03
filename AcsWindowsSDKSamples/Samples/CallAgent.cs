@@ -12,29 +12,16 @@ namespace AcsWindowsSDKSamples.Samples
             var callAgent = await GetCallAgentAsync();
 
             // Wire up event sinks for call agent
-            callAgent.OnCallsUpdated += CallAgent_OnCallsUpdated;
-            callAgent.OnIncomingCall += CallAgent_OnIncomingCall;
+            callAgent.CallsUpdated += CallAgent_OnCallsUpdated;
+            callAgent.IncomingCallReceived += CallAgent_OnIncomingCall;
 
             // Assemble a list of callees
-            var callees = new List<CommunicationIdentifier>() { new MicrosoftTeamsUserIdentifier("<Constants.TEAMS_PUBLIC_CLOUD_MRI_PREFIX.Length>") };
+            var callees = new List<CallIdentifier>() { new MicrosoftTeamsUserCallIdentifier("<Constants.TEAMS_PUBLIC_CLOUD_MRI_PREFIX.Length>") };
 
             // Configure audio preferences
-            var audioOptions = new AudioOptions()
-            {
-                IncomingAudioStream = await GetIncomingAudioStreamAsync(),
-                OutgoingAudioStream = await GetOutgoingAudioStreamAsync(),
-                Muted = false,
-                SpeakerMuted = false
-            };
+            var audioOptions = new AudioOptions() {  IsMuted = false };
             // Configure video preference
-            var videoOptions = new VideoOptions(new[] { new OutgoingVideoStream() })
-            {
-                IncomingVideoOptions = new IncomingVideoOptions()
-                {
-                    AllowVideoFrameTextures = true,
-                    ReceiveRawIncomingVideoStreams = true,
-                }
-            };
+            var videoOptions = new VideoOptions(new VideoOptions( new[] { await GetOutgoingVideoStreamAsync() }));
 
             var startCallOptions = new StartCallOptions()
             {
@@ -46,38 +33,28 @@ namespace AcsWindowsSDKSamples.Samples
             var call = await callAgent.StartCallAsync(callees, startCallOptions);
 
             // Give control back to the app, or carry out additional tasks with the call object, such as adding participant
-            var phoneNumberOptions = new AddPhoneNumberOptions(new PhoneNumberIdentifier("+14257654321"));
-            call.AddParticipant(new PhoneNumberIdentifier("userMRI"), phoneNumberOptions);
+            var phoneNumberOptions = new AddPhoneNumberOptions(new PhoneNumberCallIdentifier("+14257654321"));
+            call.AddParticipant(new PhoneNumberCallIdentifier("userMRI"), phoneNumberOptions);
         }
 
         // Accept incoming calls
-        private async void CallAgent_OnIncomingCall(object sender, IncomingCall incomingCall) // Wrap this with a EventArgs
+        private async void CallAgent_OnIncomingCall(object sender, IncomingCallReceivedEventArgs args) // Wrap this with a EventArgs
         {
-            Console.WriteLine($"{incomingCall.CallerInfo.DisplayName}");
+            var incomingCall = args.IncomingCall;
+            
+            Console.WriteLine($"{incomingCall.CallerDetails.DisplayName}");
 
             // Configure how we want to accept the incomnig call
             var acceptCallOptions = new AcceptCallOptions() {
-                AudioOptions = new AudioOptions() {
-                    IncomingAudioStream = await GetIncomingAudioStreamAsync(),
-                    OutgoingAudioStream = await GetOutgoingAudioStreamAsync(),
-                    Muted = false,
-                    SpeakerMuted = false
-                },
                 VideoOptions = new VideoOptions( new[] { await GetOutgoingVideoStreamAsync() })
-                {
-                    IncomingVideoOptions = new IncomingVideoOptions()
-                    {
-                        AllowVideoFrameTextures = true,
-                        ReceiveRawIncomingVideoStreams = true,
-                    }
-                }
             };
+
             // Actually accept the incoming call
             var call = await incomingCall.AcceptAsync(acceptCallOptions);
 
             var client = await GetCallClientAsync(); // Developer should be able to grab the client either from sender or incomingCall
-            var cameras = (await client.GetDeviceManager()).Cameras;
-            await call.StartVideo(new LocalVideoStream(cameras.First())); // We are going to feed the video with LocalVideoStream off a local camera
+            var cameras = (await client.GetDeviceManagerAsync()).Cameras;
+            await call.StartVideoAsync(new LocalVideoStream(cameras.First())); // We are going to feed the video with LocalVideoStream off a local camera
 
             // Have fun with the call
 
@@ -87,7 +64,7 @@ namespace AcsWindowsSDKSamples.Samples
             });
 
             // Access misc properties on a call object
-            Console.WriteLine($"{call.CallerInfo.Identifier}/{call.CallEndReason}");
+            Console.WriteLine($"{call.CallerDetails.Identifier}/{call.CallEndReason}");
         }
 
         private void CallAgent_OnCallsUpdated(object sender, CallsUpdatedEventArgs args)

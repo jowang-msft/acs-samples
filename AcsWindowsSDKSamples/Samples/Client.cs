@@ -19,10 +19,10 @@ namespace AcsWindowsSDKSamples.Samples
             });
 
             // Prepare token auto-refresher for call agent
-            var tokenRefreshOptions = new CommunicationTokenRefreshOptions(true); // true == proactively refresh on a fixed timer
-            tokenRefreshOptions.OnTokenRefreshRequested += OnTokenRefreshRequested;
+            var tokenRefreshOptions = new CallTokenRefreshOptions(true); // true == proactively refresh on a fixed timer
+            tokenRefreshOptions.TokenRefreshRequested += OnTokenRefreshRequested;
 
-            var creds = new CommunicationTokenCredential("<initial-token>", tokenRefreshOptions); // Credential is specific to each call agent
+            var creds = new CallTokenCredential("<initial-token>", tokenRefreshOptions); // Credential is specific to each call agent
 
             // Prepare calll agent option
             var callAgentOptions = new CallAgentOptions()
@@ -32,14 +32,14 @@ namespace AcsWindowsSDKSamples.Samples
             };
 
             // Actually create the call agent with credential and options
-            var callAgent = await callClient.CreateCallAgent(creds, callAgentOptions);
+            var callAgent = await callClient.CreateCallAgentAsync(creds, callAgentOptions);
 
             // Have some fun with call agent
         }
 
-        private async void OnTokenRefreshRequested(object sender, TokenRefreshRequestedEventArgs args)
+        private async void OnTokenRefreshRequested(object sender, CallTokenRefreshRequestedEventArgs args)
         {
-            var accessToken = args.AccessToken;
+            var accessToken = args.CallToken;
             Console.WriteLine($"{accessToken.Token}-{accessToken.ExpiresOn}");
             // Do something about the token, or update it
         }

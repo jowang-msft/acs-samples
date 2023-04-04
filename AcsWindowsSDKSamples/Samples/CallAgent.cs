@@ -37,6 +37,10 @@ namespace AcsWindowsSDKSamples.Samples
                 // Actually ring the callees
                 var call = await callAgent.StartCallAsync(callees, startCallOptions);
 
+                await callAgent.RegisterForPushNotificationAsync("<Device token>");
+                callAgent.HandlePushNotificationAsync(new PushNotificationDetails() { });
+                callAgent.UnregisterPushNotificationAsync();
+
                 // Start the bump and have fun with the call
             }
         }

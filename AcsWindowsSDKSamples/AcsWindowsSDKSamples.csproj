@@ -129,6 +129,7 @@
     <Compile Include="Samples\Client.cs" />
     <Compile Include="Samples\Devices.cs" />
     <Compile Include="Samples\JoinCall.cs" />
+    <Compile Include="Samples\PushNotification.cs" />
     <Compile Include="Samples\RawMedia.cs" />
     <Compile Include="Samples\Sample.cs" />
   </ItemGroup>
@@ -163,11 +164,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Azure.Communication.Calling">
-      <HintPath>.\Azure.Communication.Calling.winmd</HintPath>
+    <Reference Include="Azure.Communication.Calling.WindowsClient">
+      <HintPath>.\Azure.Communication.Calling.WindowsClient.winmd</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

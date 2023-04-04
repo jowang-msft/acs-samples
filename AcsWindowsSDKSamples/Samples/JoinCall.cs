@@ -7,27 +7,28 @@ namespace AcsWindowsSDKSamples.Samples
     {
         private async void JoinCallAsync()
         {
-            // Configure audio preferences
-            var audioOptions = new AudioOptions() {  IsMuted = false };
-            // Configure video preference
-            var videoOptions = new VideoOptions(new VideoOptions( new[] { await GetOutgoingVideoStreamAsync() }));
-
-            var locator = await GetJoinMeetingLocatorAsync();
             var joinCallOptions = new JoinCallOptions()
             {
-                AudioOptions = audioOptions,
-                VideoOptions = videoOptions,
+                AudioOptions = new AudioOptions() {  IsMuted = false },
+                VideoOptions = new VideoOptions(new VideoOptions( new[] { await GetOutgoingVideoStreamAsync() }))
             };
 
-            var callAgent = await GetCallAgentAsync();
-            var call = await callAgent.JoinAsync(locator, joinCallOptions);
+            using(var callAgent = await GetCallAgentAsync())
+            {
+                // Join group call using group id (GUID)
+                var groupCallLocator = new GroupCallLocator(Guid.Parse("<groupId>"));
+                await callAgent.JoinAsync(groupCallLocator, joinCallOptions);
 
-            // Join group call using group id (GUID)
-            var groupCallLocator = new GroupCallLocator(Guid.Parse("<groupId>"));
-            await callAgent.JoinAsync(groupCallLocator, joinCallOptions);
-            // Join group chat call using thread id (ALPHA only)
-            //var groupChatCallLocator = new GroupChatCallLocator("<threadid>"); //TFL
-            //await callAgent.JoinAsync(groupChatCallLocator, joinCallOptions);
+                var teamMeetingLocator = new TeamsMeetingCoordinatesLocator("<threadId>", Guid.Parse("<organizatoinId>"), Guid.Parse("<tenantId>"), "<Message>");
+                await callAgent.JoinAsync(teamMeetingLocator, joinCallOptions);
+
+                var teamMettingLink = new TeamsMeetingLinkLocator("<TeamLink>");
+                await callAgent.JoinAsync(teamMettingLink, joinCallOptions);
+
+                // Join group chat call using thread id (ALPHA only)
+                //var groupChatCallLocator = new GroupChatCallLocator("<threadid>"); //TFL
+                //await callAgent.JoinAsync(groupChatCallLocator, joinCallOptions);
+            }
         }
     }
 }

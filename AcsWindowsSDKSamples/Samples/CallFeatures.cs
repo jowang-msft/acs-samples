@@ -8,40 +8,35 @@ namespace AcsWindowsSDKSamples.Samples
     {
         internal async Task<DominantSpeakersCallFeature> GetDominantSpeakersCallFeatureAsync() { throw new NotImplementedException(); }
 
-        async void AddFeatureAsync()
+        async void UseFeatureAsync()
         {
-            // Configure audio preferences
-            var audioOptions = new AudioOptions() {  IsMuted = false };
-            // Configure video preference
-            var videoOptions = new VideoOptions(new VideoOptions( new[] { await GetOutgoingVideoStreamAsync() }));
+            var call = await GetCallAsync();
 
-            // Start the call
-            var callAgent = await GetCallAgentAsync();
-            var call = await callAgent.StartCallAsync(
-                new [] { new UserCallIdentifier("eyxxxxx") },
-                new StartCallOptions()
-                {
-                    AudioOptions = audioOptions,
-                    VideoOptions = videoOptions
-                });
-
-            // Enable on caption feature
+            // Configure DominantSpeakers feature
             var dominantSpeakers = call.Features.DominantSpeakers;
+            Console.WriteLine($"{dominantSpeakers.Name}, {dominantSpeakers.DominantSpeakersDetails.LastUpdatedAt}");
             dominantSpeakers.DominantSpeakersChanged += OnDominantSpeakersChanged;
 
+            // Configure recording feature
             var recordingFeature = call.Features.Recording;
+            Console.WriteLine($"{recordingFeature.Name}, {recordingFeature.IsRecordingActive}");
             recordingFeature.IsRecordingActiveChanged += OnIsRecordingActiveChanged;
 
+            // Configure Transcription feature
             var transcriptionFeature = call.Features.Transcription;
+            Console.WriteLine($"{transcriptionFeature.Name}, {transcriptionFeature.IsTranscriptionActive}");
             transcriptionFeature.IsTranscriptionActiveChanged += OnIsTranscriptionActiveChanged;
+
+            // DataChannel feature
+            // var dataChannelFeature = call.Features.DataChannel;
         }
 
-        private void OnIsTranscriptionActiveChanged(object sender, PropertyChangedEventArgs e)
+        private async void OnIsTranscriptionActiveChanged(object sender, PropertyChangedEventArgs e)
         {
             throw new NotImplementedException();
         }
 
-        private void OnIsRecordingActiveChanged(object sender, PropertyChangedEventArgs e)
+        private async void OnIsRecordingActiveChanged(object sender, PropertyChangedEventArgs e)
         {
             throw new NotImplementedException();
         }

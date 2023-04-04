@@ -123,6 +123,7 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Samples\Call.cs" />
     <Compile Include="Samples\CallAgent.cs" />
     <Compile Include="Samples\CallFeatures.cs" />
     <Compile Include="Samples\Client.cs" />

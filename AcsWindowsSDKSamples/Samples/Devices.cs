@@ -2,9 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.Media.Protection.PlayReady;
 
 namespace AcsWindowsSDKSamples.Samples
 {
@@ -15,44 +12,42 @@ namespace AcsWindowsSDKSamples.Samples
             var client = await GetCallClientAsync();
 
             var deviceManager = await client.GetDeviceManagerAsync();
+
+            // Get a list of speakers
+            IReadOnlyList<AudioDeviceDetails> speakers = deviceManager.Speakers;
+            // Get a list of cameras
+            IReadOnlyList<VideoDeviceDetails> cameras = deviceManager.Cameras;
+            // Get a list of microphones
+            IReadOnlyList<AudioDeviceDetails> microphonse = deviceManager.Microphones;
+
             // Set up event sinks for device manager
-            deviceManager.MicrophonesUpdated += DeviceManager_OnMicrophonesUpdated;
-            deviceManager.CamerasUpdated += DeviceManager_OnCamerasUpdated;
-            deviceManager.SpeakersUpdated += DeviceManager_OnSpeakersUpdated;
-            // We can fetch various media devices and query for their states
+            deviceManager.MicrophonesUpdated += OnMicrophonesUpdated;
+            deviceManager.SpeakersUpdated += OnSpeakersUpdated;
+            deviceManager.CamerasUpdated += OnCamerasUpdated;
+
+            // Get active devices
             var microphone = deviceManager.Microphone;
-            var camera = deviceManager.Cameras[3];
-            var speaker = deviceManager.Speakers[2];
+            var camera = cameras.First();
+            Console.WriteLine($"{camera.Name}, {camera.CameraFacing.HasFlag(CameraFacing.Front)}");
 
-            // Configure audio preferences
-            var audioOptions = new AudioOptions() {  IsMuted = false };
-            // Configure video preference
-            var videoOptions = new VideoOptions(new VideoOptions( new[] { await GetOutgoingVideoStreamAsync() }));
-
-            // Start the call and get ready to resposne to device callbacks
-            var callAgent = await GetCallAgentAsync();
-            var call = await callAgent.StartCallAsync(
-                new [] { new UserCallIdentifier("eyxxxxx") },
-                new StartCallOptions()
-                {
-                    AudioOptions = audioOptions,
-                    VideoOptions = videoOptions
-                });
+            // Switch active mic and speaker
+            deviceManager.SetMicrophone(microphonse.Last());
+            deviceManager.SetSpeaker(speakers.First());
         }
 
-        private void DeviceManager_OnSpeakersUpdated(object sender, AudioDevicesUpdatedEventArgs args)
+        private async void OnMicrophonesUpdated(object sender, AudioDevicesUpdatedEventArgs args)
+        {
+            Console.WriteLine($"{args.AddedAudioDevices.Count}-{args.AddedAudioDevices.Count}");
+        }
+
+        private async void OnSpeakersUpdated(object sender, AudioDevicesUpdatedEventArgs args)
         {
             Console.WriteLine($"{args.AddedAudioDevices.Count}-{args.RemovedAudioDevices.Count}");
         }
 
-        private void DeviceManager_OnCamerasUpdated(object sender, VideoDevicesUpdatedEventArgs args)
+        private async void OnCamerasUpdated(object sender, VideoDevicesUpdatedEventArgs args)
         {
             Console.WriteLine($"{args.AddedVideoDevices.Count}-{args.RemovedVideoDevices.Count}");
-        }
-
-        private void DeviceManager_OnMicrophonesUpdated(object sender, AudioDevicesUpdatedEventArgs args)
-        {
-            throw new NotImplementedException();
         }
     }
 }

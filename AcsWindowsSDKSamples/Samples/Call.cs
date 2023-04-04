@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.Devices.Geolocation.Provider;
 
 namespace AcsWindowsSDKSamples.Samples
@@ -22,7 +23,14 @@ namespace AcsWindowsSDKSamples.Samples
             await call.StartVideoAsync(localVideoStream);
 
             // Set up event sinks for call object
-            call.IdChanged += OnIdChanged;
+            call.IdChanged += (object sender, PropertyChangedEventArgs e) =>
+            {
+                var me = sender as Call;
+                Task.Run(() =>
+                {
+                    Console.WriteLine($"{me.State}");
+                });
+            };
             call.StateChanged += OnStateChanged;
             call.IsMutedChanged += OnIsMutedChanged;
             call.StateChanged += OnStateChanged1;
